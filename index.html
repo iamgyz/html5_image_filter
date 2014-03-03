@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+	var imageWidth;
+    var imageHeight;
+	var canvas;
+	var context;
+	var imageData
+	var pixelData;	
+	var imgSrc;
+	var canvasW=200;
+	var canvasH=300;
+	function filterProcess()
+	{		
+		loadImage(1);
+	}
+	function loadImage(canvasID)
+	{			
+		var imageObj = new Image();      
+		imageObj.onload = function() {
+		        canvas = document.getElementById('canvas');
+				context = canvas.getContext('2d');				
+				//magic! 重設canvas最快的方法
+				//http://jsperf.com/canvas-clear-speed/9
+				/*-----------------------------------*/
+						canvas.width=canvasW; 
+				/*-----------------------------------*/
+				imageWidth = imageObj.width;
+				imageHeight = imageObj.height;
+				//context.clearRect(0, 0,canvasW,canvasH);
+			  //讓圖片fit到canvas中
+			  console.log("img width = "+imageWidth+" height = "+imageHeight);
+			  //比canvas small就放大
+			  var scale=1;
+			  if(imageWidth<=canvasW)
+			  {
+				if(imageHeight <=canvasH) //w<=W h<=H
+				{
+					sw = canvasW/imageWidth;
+				    sh = canvasH/imageHeight;
+					scale = sw<=sh?sw:sh;// statement?true:false	
+					//context.scale(scale,scale);//width,height
+				}
+				else //w<=W h>H
+				{
+					scale = imageHeight / canvasH;					
+					scale = 1 / scale;
+				}
+			  }
+			  else 
+			  {
+				if(imageHeight <=canvasH) //w>W h<=H
+				{
+					scale = imageWidth / canvasW;
+					scale = 1/scale;
+				}
+				else //w>W h>H
+				{
+					sw = imageWidth / canvasW;
+				    sh = imageHeight / canvasH;
+					scale = sw>sh?sw:sh;// statement?true:false	
+					scale = 1/scale;
+				}
+			  }
+			  context.scale(scale,scale);//width,height
+			  /*
+			  if(imageWidth<=canvasW && imageHeight <=canvasH)
+			  {
+				var sw = canvasW/imageWidth;
+				var sh = canvasH/imageHeight;
+				scale = sw<=sh?sw:sh;// statement?true:false			
+				//scale = parseInt(scale);
+				context.scale(scale,scale);//width,height
+				console.log("sw = "+sw+" sh = "+sh);
+				console.log("scale="+scale);
+				context.scale(1,1);//width,height
+			  }
+			  //比canvas big就縮小
+			  else
+			  {
+				var sw = imageWidth / canvasW;
+				var sh = imageHeight / canvasH;
+				scale = sw>sh?sw:sh;// statement?true:false			
+				scale = 1/scale;
+				context.scale(scale,scale);//width,height			
+				console.log("sw = "+sw+" sh = "+sh);
+				console.log("scale="+scale);
+			  }
+			  */
+			  //更新 新的image width&height			  
+			  imageWidth = imageWidth*scale;
+			  imageHeight = imageHeight*scale; 
+			  console.log("new img width = "+imageWidth+" height = "+imageHeight);
+			  context.drawImage(this,0,0);				  
+			  imageData = context.getImageData(0,0,imageWidth, imageHeight);
+			  pixelData = imageData.data;	
+			  //console.log(pixelData);
+			  texture(canvasID);		
+        };				
+		//load img
+		imageObj.src = imgSrc;
+
+	}	
+
+	function texture(canvasID)
+	{
+		var imageObj = new Image();      
+		imageObj.onload = function() {
+		    var canvas2 = document.getElementById('canvas_'+canvasID);
+			var context2 = canvas2.getContext('2d');		
+			canvas2.width=canvasW; 			
+			tWidth = imageObj.width;
+			tHeight = imageObj.height; 	
+			if(tWidth > imageWidth)
+			{
+				sw = tWidth / imageWidth;
+				sw = 1/sw;
+				if(tHeight > imageHeight)
+				{
+					sh = tHeight / imageHeight;										
+					sh=1/sh;		
+				}
+				else
+				{
+					sh = imageHeight / tHeight;							
+				}									
+			}
+			else
+			{
+				sw = imageWidth / tWidth;
+				if(tHeight > imageHeight)
+				{
+					sh = tHeight / imageHeight;		
+					sh = 1/sh;
+				}
+				else
+				{
+					sh = imageHeight / tHeight;								
+				}			
+												
+			}
+			context2.scale(sw,sh);
+			tWidth = tWidth * sw;
+			tHeight = tHeight * sh; 
+			context2.drawImage(this,0,0);
+			var pixelData2 = context2.getImageData(0,0,tWidth,tHeight).data;			
+			console.log("canvas id = "+canvasID+" length = "+pixelData.length);
+			for(var i = 0; i <  pixelData.length; i += 4) {
+			  // red
+			   pixelData[i] = pixelData[i]*(1) + pixelData2[i]*(0.3);
+			  // green
+			   pixelData[i + 1] = pixelData[i + 1]*(1) + pixelData2[i+1]*(0.3);
+			  // blue
+			   pixelData[i + 2] = pixelData[i + 2]*(1) + pixelData2[i+2]*(0.3);
+			}
+			// overwrite original image
+			context2.putImageData(imageData,0,0);	
+			canvasID++;
+			if(canvasID<=8)
+			{			
+				console.log(canvasID);					
+			//alert('a');								
+				loadImage(canvasID);				
+			}        		
+        };		
+		imageObj.src = "texture"+canvasID+".jpg";
+
+
+	}
+</script>
+</head>
+
+<body>
+<div>Original</div>
+<input id="file" type="file" />
+<!--<button onclick='filterProcess()'>Upload</button>-->
+<canvas id = 'canvas' width="200" height="300"></canvas>
+<div>Result</div>
+<canvas id = 'canvas_1' width="200" height="300"></canvas>
+<canvas id = 'canvas_2' width="200" height="300"></canvas>
+<canvas id = 'canvas_3' width="200" height="300"></canvas>
+<canvas id = 'canvas_4' width="200" height="300"></canvas>
+<canvas id = 'canvas_5' width="200" height="300"></canvas>
+<canvas id = 'canvas_6' width="200" height="300"></canvas>
+<canvas id = 'canvas_7' width="200" height="300"></canvas>
+<canvas id = 'canvas_8' width="200" height="300"></canvas>
+<img id="i"/>
+<script>
+function handleFileSelect(evt) {
+	var files = evt.target.files[0];
+	console.log(files);	
+	var reader = new FileReader();	
+	reader.onload = (function(theFile) {
+        return function(e) {
+        //  document.getElementById('i').src = e.target.result;
+		  console.log(e.target.result);
+		  imgSrc = e.target.result;
+		  filterProcess()
+        };
+      })(files);	
+	reader.readAsDataURL(files);
+}
+
+document.getElementById('file').addEventListener('change', handleFileSelect, false);
+</script>
+</body>
+
+</html>
